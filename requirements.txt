@@ -1,0 +1,5 @@
+Flask==3.0.3
+pyjwt==2.8.0
+pillow==10.3.0
+python-dotenv==1.0.1
+psycopg2==2.9.9
