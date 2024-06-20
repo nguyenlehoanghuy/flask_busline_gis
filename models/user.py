@@ -13,7 +13,7 @@ class User:
             with self.conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM users;")
                 users = cursor.fetchall()
-            return [{'id': user[0], 'email': user[1], 'name': user[2]} for user in users]
+            return [{'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]} for user in users]
         except psycopg2.Error as e:
             print(f"Error fetching all users: {e}")
             return None
@@ -24,7 +24,7 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE id = %s;", (user_id,))
                 user = cursor.fetchone()
-            return {'id': user[0], 'email': user[1], 'name': user[2]}
+            return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {user_id}: {e}")
             return None
@@ -77,7 +77,7 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE email = %s;", (email,))
                 user = cursor.fetchone()
-            return {'id': user[0], 'email': user[1], 'name': user[2]}
+            return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {email}: {e}")
             return None

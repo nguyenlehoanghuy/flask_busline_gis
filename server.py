@@ -3,6 +3,7 @@ import psycopg2
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
 from models import User
 from utils import validate_email_and_password, validate_user
@@ -24,9 +25,11 @@ db_user = os.getenv('DB_USERNAME', 'postgres')
 db_password = os.getenv('DB_PASSWORD', '123456')
 
 app = Flask(__name__)
+app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['JWT_SECRET_KEY'] = jwt_secret
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(jwt_access_token_expires)
 
+cors = CORS(app)
 jwt = JWTManager(app)
 
 conn = psycopg2.connect(dbname=db_dbname, user=db_user,
@@ -34,11 +37,13 @@ conn = psycopg2.connect(dbname=db_dbname, user=db_user,
 
 
 @app.route("/")
+@cross_origin()
 def hello():
     return "Hello World!"
 
 
 @app.route("/auth/login", methods=["POST"])
+@cross_origin()
 def login():
     try:
         data = request.json
@@ -78,6 +83,7 @@ def login():
 
 
 @app.route("/auth/register", methods=["POST"])
+@cross_origin()
 def create_user():
     try:
         data = request.json
@@ -115,6 +121,7 @@ def create_user():
 
 
 @app.route("/auth/me", methods=["GET"])
+@cross_origin()
 @jwt_required()
 def get_current_user():
     current_user_id = get_jwt_identity()
