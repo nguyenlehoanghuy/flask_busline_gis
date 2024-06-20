@@ -1,5 +1,6 @@
 import psycopg2
 
+from flask_jwt_extended import create_access_token
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -12,7 +13,7 @@ class User:
             with self.conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM users;")
                 users = cursor.fetchall()
-            return [{'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]} for user in users]
+            return [{'id': user[0], 'email': user[1], 'name': user[2]} for user in users]
         except psycopg2.Error as e:
             print(f"Error fetching all users: {e}")
             return None
@@ -23,7 +24,7 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE id = %s;", (user_id,))
                 user = cursor.fetchone()
-            return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
+            return {'id': user[0], 'email': user[1], 'name': user[2]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {user_id}: {e}")
             return None
@@ -38,7 +39,12 @@ class User:
                 """, (name, email, self.encrypt_password(password)))
                 new_user_id = cursor.fetchone()[0]
                 self.conn.commit()
-            return {'id': new_user_id}
+                access_token = create_access_token(
+                    identity=new_user_id)
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+            }
         except psycopg2.Error as e:
             print(f"Error creating user: {e}")
             return None
@@ -71,7 +77,7 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE email = %s;", (email,))
                 user = cursor.fetchone()
-            return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
+            return {'id': user[0], 'email': user[1], 'name': user[2]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {email}: {e}")
             return None
@@ -85,4 +91,9 @@ class User:
         user = self.get_user_by_email(email)
         if not user or not check_password_hash(user["password"], password):
             return None
-        return user
+        access_token = create_access_token(
+            identity=user['id'])
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+        }

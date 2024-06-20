@@ -1,10 +1,9 @@
-import jwt
 import os
 import psycopg2
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-from middleware import token_required
+from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
 from models import User
 from utils import validate_email_and_password, validate_user
 # from utils.validate import validate_book, validate_email_and_password, validate_user
@@ -12,9 +11,10 @@ from utils import validate_email_and_password, validate_user
 load_dotenv()
 
 # App
-secret_key = os.getenv('JWT_SECRET', '$3cr3t!')
+jwt_secret = os.getenv('JWT_SECRET', '$3cr3t!')
+jwt_access_token_expires = os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 900)
 app_host = os.getenv('APP_HOST', 'localhost')
-app_port = int(os.getenv('APP_PORT', 5000))
+app_port = os.getenv('APP_PORT', 5000)
 app_debug = os.getenv('APP_DEBUG', 'true').lower() in ['true', '1']
 # Database
 db_host = os.getenv('DB_HOST', 'localhost')
@@ -24,7 +24,10 @@ db_user = os.getenv('DB_USERNAME', 'postgres')
 db_password = os.getenv('DB_PASSWORD', '123456')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = secret_key
+app.config['JWT_SECRET_KEY'] = jwt_secret
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(jwt_access_token_expires)
+
+jwt = JWTManager(app)
 
 conn = psycopg2.connect(dbname=db_dbname, user=db_user,
                         password=db_password, host='localhost', port=db_port)
@@ -35,7 +38,7 @@ def hello():
     return "Hello World!"
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/auth/login", methods=["POST"])
 def login():
     try:
         data = request.json
@@ -53,20 +56,14 @@ def login():
         #         "message": "Invalid data",
         #         "data": None,
         #         "error": is_validated}, 400
-        user = User(conn).login(
+        token = User(conn).login(
             data["email"],
             data["password"]
         )
-        if user:
-            user["token"] = jwt.encode(
-                {"user_id": user["id"]},
-                app.config["SECRET_KEY"],
-                algorithm="HS256"
-            )
-            return {
-                "message": "Successfully fetched auth token",
-                "data": user
-            }
+        if token:
+            expires_in = int(jwt_access_token_expires)
+            token["expires_in"] = expires_in
+            return token
         return {
             "message": "Error fetching auth token!, invalid email or password",
             "data": None,
@@ -80,7 +77,7 @@ def login():
         }, 500
 
 
-@app.route("/register", methods=["POST"])
+@app.route("/auth/register", methods=["POST"])
 def create_user():
     try:
         data = request.json
@@ -98,18 +95,12 @@ def create_user():
         #         "message": "Invalid data",
         #         "data": None,
         #         "error": is_validated}, 400
-        user = User(conn).create_user(
+        token = User(conn).create_user(
             data["email"], data["name"], data["password"])
-        if user:
-            user["token"] = jwt.encode(
-                {"user_id": user["id"]},
-                app.config["SECRET_KEY"],
-                algorithm="HS256"
-            )
-            return {
-                "message": "Successfully registered",
-                "data": user
-            }
+        if token:
+            expires_in = int(jwt_access_token_expires)
+            token["expires_in"] = expires_in
+            return token
         return {
             "message": "User already exists",
             "data": None,
@@ -123,10 +114,11 @@ def create_user():
         }, 500
 
 
-@app.route("/users", methods=["GET"])
-@token_required
-def get_current_user(current_user):
-    user = User(conn).get_user_by_id(current_user["user_id"])
+@app.route("/auth/me", methods=["GET"])
+@jwt_required()
+def get_current_user():
+    current_user_id = get_jwt_identity()
+    user = User(conn).get_user_by_id(current_user_id)
     return jsonify({
         "message": "Successfully retrieved user profile",
         "data": user
@@ -419,4 +411,4 @@ def get_current_user(current_user):
 
 
 if __name__ == "__main__":
-    app.run(host=app_host, port=app_port, debug=app_debug)
+    app.run(host=app_host, port=int(app_port), debug=app_debug)
