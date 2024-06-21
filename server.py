@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
-from models import User
+from models import User, BusStation
 from utils import validate_email_and_password, validate_user
 # from utils.validate import validate_book, validate_email_and_password, validate_user
 
@@ -40,6 +40,8 @@ conn = psycopg2.connect(dbname=db_dbname, user=db_user,
 @cross_origin()
 def hello():
     return "Hello World!"
+
+# Auth
 
 
 @app.route("/auth/login", methods=["POST"])
@@ -131,17 +133,19 @@ def get_current_user():
         "data": user
     }), 200
 
+# Users management
+
 
 @app.route("/users", methods=["GET"])
 @cross_origin()
 @jwt_required()
 def gat_all_users():
     try:
-        users = User(conn).get_all_users()
-        return {
-            "message": "Successfully gat all users",
-            "data": users
-        }, 201
+        user = User(conn).get_all_users()
+        return jsonify({
+            "message": "Successfully retrieved all users",
+            "data": user
+        }), 200
     except Exception as e:
         return {
             "message": "Something went wrong",
@@ -149,141 +153,147 @@ def gat_all_users():
             "data": None
         }, 500
 
-# @app.route("/books/", methods=["POST"])
-# @token_required
-# def add_book(current_user):
-#     try:
-#         book = dict(request.form)
-#         if not book:
-#             return {
-#                 "message": "Invalid data, you need to give the book title, cover image, author id,",
-#                 "data": None,
-#                 "error": "Bad Request"
-#             }, 400
-#         if not request.files["cover_image"]:
-#             return {
-#                 "message": "cover image is required",
-#                 "data": None
-#             }, 400
-
-#         book["image_url"] = request.host_url+"static/books/" + \
-#             save_pic(request.files["cover_image"])
-#         is_validated = validate_book(**book)
-#         if is_validated is not True:
-#             return {
-#                 "message": "Invalid data",
-#                 "data": None,
-#                 "error": is_validated
-#             }, 400
-#         book = Books().create(**book, user_id=current_user["_id"])
-#         if not book:
-#             return {
-#                 "message": "The book has been created by user",
-#                 "data": None,
-#                 "error": "Conflict"
-#             }, 400
-#         return jsonify({
-#             "message": "successfully created a new book",
-#             "data": book
-#         }), 201
-#     except Exception as e:
-#         return jsonify({
-#             "message": "failed to create a new book",
-#             "error": str(e),
-#             "data": None
-#         }), 500
+# Bus stations management
 
 
-# @app.route("/books/", methods=["GET"])
-# @token_required
-# def get_books(current_user):
-#     try:
-#         books = Books().get_by_user_id(current_user["_id"])
-#         return jsonify({
-#             "message": "successfully retrieved all books",
-#             "data": books
-#         })
-#     except Exception as e:
-#         return jsonify({
-#             "message": "failed to retrieve all books",
-#             "error": str(e),
-#             "data": None
-#         }), 500
+@app.route("/bus_stations", methods=["GET"])
+@cross_origin()
+def get_all_bus_stations():
+    try:
+        bus_stations = BusStation(conn).get_all_bus_stations()
+        return jsonify({
+            "message": "Successfully retrieved bus stations",
+            "data": bus_stations
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
 
 
-# @app.route("/books/<book_id>", methods=["GET"])
-# @token_required
-# def get_book(book_id):
-#     try:
-#         book = Books().get_by_id(book_id)
-#         if not book:
-#             return {
-#                 "message": "Book not found",
-#                 "data": None,
-#                 "error": "Not Found"
-#             }, 404
-#         return jsonify({
-#             "message": "successfully retrieved a book",
-#             "data": book
-#         })
-#     except Exception as e:
-#         return jsonify({
-#             "message": "Something went wrong",
-#             "error": str(e),
-#             "data": None
-#         }), 500
+@app.route("/bus_stations/<bus_station_id>", methods=["GET"])
+@cross_origin()
+def get_bus_station_by_id(bus_station_id):
+    try:
+        bus_station = BusStation(conn).get_bus_station_by_id(bus_station_id)
+        if not bus_station:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return jsonify({
+            "message": "Successfully retrieved a bus station",
+            "data": bus_station
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
 
 
-# @app.route("/books/<book_id>", methods=["PUT"])
-# @token_required
-# def update_book(current_user, book_id):
-#     try:
-#         book = Books().get_by_id(book_id)
-#         if not book or book["user_id"] != current_user["_id"]:
-#             return {
-#                 "message": "Book not found for user",
-#                 "data": None,
-#                 "error": "Not found"
-#             }, 404
-#         book = request.form
-#         if book.get('cover_image'):
-#             book["image_url"] = request.host_url+"static/books/" + \
-#                 save_pic(request.files["cover_image"])
-#         book = Books().update(book_id, **book)
-#         return jsonify({
-#             "message": "successfully updated a book",
-#             "data": book
-#         }), 201
-#     except Exception as e:
-#         return jsonify({
-#             "message": "failed to update a book",
-#             "error": str(e),
-#             "data": None
-#         }), 400
+@app.route("/bus_stations", methods=["POST"])
+@cross_origin()
+@jwt_required()
+def create_bus_station():
+    try:
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        bus_station = BusStation(conn).create_bus_station(
+            data["name"], data["long"], data["lat"], data["address"], data["id_ward"])
+        return jsonify({
+            "message": "Successfully created a bus station",
+            "data": bus_station
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "Failed to create a bus station",
+            "error": str(e),
+            "data": None
+        }), 500
 
 
-# @app.route("/books/<book_id>", methods=["DELETE"])
-# @token_required
-# def delete_book(current_user, book_id):
-#     try:
-#         book = Books().get_by_id(book_id)
-#         if not book or book["user_id"] != current_user["_id"]:
-#             return {
-#                 "message": "Book not found for user",
-#                 "data": None,
-#                 "error": "Not found"
-#             }, 404
-#         Books().delete(book_id)
-#         return jsonify({
-#             "message": "successfully deleted a book",
-#             "data": None
-#         }), 204
-#     except Exception as e:
-#         return jsonify({
-#             "message": "failed to delete a book",
-#             "error": str(e),
-#             "data": None
-#         }), 400
+@app.route("/bus_stations/<bus_station_id>", methods=["PUT"])
+@cross_origin()
+@jwt_required()
+def update_bus_station(bus_station_id):
+    try:
+        bus_station = BusStation(conn).get_bus_station_by_id(bus_station_id)
+        if not bus_station:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        bus_station = BusStation(conn).update_bus_station(
+            data["name"], data["long"], data["lat"], data["address"], data["id_ward"], bus_station_id)
+        return jsonify({
+            "message": "Successfully updated a bus station",
+            "data": bus_station
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "failed to update a bus station",
+            "error": str(e),
+            "data": None
+        }), 400
+
+
+@app.route("/bus_stations/<bus_station_id>", methods=["DELETE"])
+@cross_origin()
+@jwt_required()
+def delete_bus_station(bus_station_id):
+    try:
+        bus_station = BusStation(conn).get_bus_station_by_id(bus_station_id)
+        if not bus_station:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        bus_station = BusStation(conn).delete_bus_station(bus_station_id)
+        return jsonify({
+            "message": "Successfully deleted a bus station",
+            "data": None
+        }), 204
+    except Exception as e:
+        return jsonify({
+            "message": "failed to delete a bus station",
+            "error": str(e),
+            "data": None
+        }), 400
 
 
 @app.errorhandler(403)

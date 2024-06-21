@@ -24,6 +24,8 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE id = %s;", (user_id,))
                 user = cursor.fetchone()
+                if not user:
+                    return None
             return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {user_id}: {e}")
@@ -77,6 +79,8 @@ class User:
                 cursor.execute(
                     "SELECT * FROM users WHERE email = %s;", (email,))
                 user = cursor.fetchone()
+                if not user:
+                    return None
             return {'id': user[0], 'email': user[1], 'name': user[2], 'password': user[3]}
         except psycopg2.Error as e:
             print(f"Error fetching user with id {email}: {e}")
