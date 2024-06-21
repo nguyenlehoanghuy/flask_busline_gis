@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
-from models import User, BusStation
+from models import User, BusStation, BusLine
 from utils import validate_email_and_password, validate_user
 
 load_dotenv()
@@ -283,6 +283,148 @@ def delete_bus_station(bus_station_id):
                 "error": "Not found"
             }, 404
         bus_station = BusStation(conn).delete_bus_station(bus_station_id)
+        return jsonify({
+            "message": "Successfully deleted a bus station",
+            "data": None
+        }), 204
+    except Exception as e:
+        return jsonify({
+            "message": "failed to delete a bus station",
+            "error": str(e),
+            "data": None
+        }), 400
+
+# Bus lines management
+
+
+@app.route("/bus_lines", methods=["GET"])
+@cross_origin()
+def get_all_bus_lines():
+    try:
+        bus_lines = BusLine(conn).get_all_bus_lines()
+        return jsonify({
+            "message": "Successfully retrieved bus lines",
+            "data": bus_lines
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/bus_lines/<bus_line_id>", methods=["GET"])
+@cross_origin()
+def get_bus_line_by_id(bus_line_id):
+    try:
+        bus_line = BusLine(conn).get_bus_line_by_id(bus_line_id)
+        if not bus_line:
+            return {
+                "message": "bus line not found",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return jsonify({
+            "message": "Successfully retrieved a bus line",
+            "data": bus_line
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/bus_lines", methods=["POST"])
+@cross_origin()
+@jwt_required()
+def create_bus_line():
+    try:
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        bus_line = BusLine(conn).create_bus_line(
+            data["name"], data["length"], data["price"], data["number_of_trips"], data["time_between_trips"], data["start_time_first"])
+        return jsonify({
+            "message": "Successfully created a bus line",
+            "data": bus_line
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "Failed to create a bus line",
+            "error": str(e),
+            "data": None
+        }), 500
+
+
+@app.route("/bus_lines/<bus_line_id>", methods=["PUT"])
+@cross_origin()
+@jwt_required()
+def update_bus_line(bus_line_id):
+    try:
+        bus_line = BusLine(conn).get_bus_line_by_id(bus_line_id)
+        if not bus_line:
+            return {
+                "message": "bus line not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        bus_line = BusLine(conn).update_bus_line(
+            bus_line_id, data["name"], data["length"], data["price"], data["number_of_trips"], data["time_between_trips"], data["start_time_first"])
+        return jsonify({
+            "message": "Successfully updated a bus line",
+            "data": bus_line
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "failed to update a bus line",
+            "error": str(e),
+            "data": None
+        }), 400
+
+
+@app.route("/bus_lines/<bus_line_id>", methods=["DELETE"])
+@cross_origin()
+@jwt_required()
+def delete_bus_line(bus_line_id):
+    try:
+        bus_line = BusLine(conn).get_bus_line_by_id(bus_line_id)
+        if not bus_line:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        bus_line = BusLine(conn).delete_bus_line(bus_line_id)
         return jsonify({
             "message": "Successfully deleted a bus station",
             "data": None
