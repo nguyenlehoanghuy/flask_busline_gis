@@ -7,7 +7,6 @@ from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
 from models import User, BusStation
 from utils import validate_email_and_password, validate_user
-# from utils.validate import validate_book, validate_email_and_password, validate_user
 
 load_dotenv()
 
@@ -258,7 +257,7 @@ def update_bus_station(bus_station_id):
         #         "data": None,
         #         "error": is_validated}, 400
         bus_station = BusStation(conn).update_bus_station(
-            data["name"], data["long"], data["lat"], data["address"], data["id_ward"], bus_station_id)
+            bus_station_id, data["name"], data["long"], data["lat"], data["address"], data["id_ward"])
         return jsonify({
             "message": "Successfully updated a bus station",
             "data": bus_station
