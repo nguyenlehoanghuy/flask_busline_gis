@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from flask_jwt_extended import JWTManager, get_jwt_identity, jwt_required
-from models import User, BusStation, BusLine
+from models import User, BusStation, BusLine, District, Ward
 from utils import validate_email_and_password, validate_user
 
 load_dotenv()
@@ -425,6 +425,287 @@ def delete_bus_line(bus_line_id):
                 "error": "Not found"
             }, 404
         bus_line = BusLine(conn).delete_bus_line(bus_line_id)
+        return jsonify({
+            "message": "Successfully deleted a bus station",
+            "data": None
+        }), 204
+    except Exception as e:
+        return jsonify({
+            "message": "failed to delete a bus station",
+            "error": str(e),
+            "data": None
+        }), 400
+
+# Districts management
+
+
+@app.route("/districts", methods=["GET"])
+@cross_origin()
+def get_all_districts():
+    try:
+        districts = District(conn).get_all_districts()
+        return jsonify({
+            "message": "Successfully retrieved districts",
+            "data": districts
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/districts/<district_id>", methods=["GET"])
+@cross_origin()
+def get_district_by_id(district_id):
+    try:
+        district = District(conn).get_district_by_id(district_id)
+        if not district:
+            return {
+                "message": "district not found",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return jsonify({
+            "message": "Successfully retrieved a district",
+            "data": district
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/districts", methods=["POST"])
+@cross_origin()
+@jwt_required()
+def create_district():
+    try:
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        district = District(conn).create_district(data["name"])
+        return jsonify({
+            "message": "Successfully created a district",
+            "data": district
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "Failed to create a district",
+            "error": str(e),
+            "data": None
+        }), 500
+
+
+@app.route("/districts/<district_id>", methods=["PUT"])
+@cross_origin()
+@jwt_required()
+def update_district(district_id):
+    try:
+        district = District(conn).get_district_by_id(district_id)
+        if not district:
+            return {
+                "message": "district not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        district = District(conn).update_district(district_id, data["name"])
+        return jsonify({
+            "message": "Successfully updated a district",
+            "data": district
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "failed to update a district",
+            "error": str(e),
+            "data": None
+        }), 400
+
+
+@app.route("/districts/<district_id>", methods=["DELETE"])
+@cross_origin()
+@jwt_required()
+def delete_district(district_id):
+    try:
+        district = District(conn).get_district_by_id(district_id)
+        if not district:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        district = District(conn).delete_district(district_id)
+        return jsonify({
+            "message": "Successfully deleted a bus station",
+            "data": None
+        }), 204
+    except Exception as e:
+        return jsonify({
+            "message": "failed to delete a bus station",
+            "error": str(e),
+            "data": None
+        }), 400
+
+# Wards management
+
+
+@app.route("/wards", methods=["GET"])
+@cross_origin()
+def get_all_wards():
+    try:
+        wards = Ward(conn).get_all_wards()
+        return jsonify({
+            "message": "Successfully retrieved wards",
+            "data": wards
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/wards/<ward_id>", methods=["GET"])
+@cross_origin()
+def get_ward_by_id(ward_id):
+    try:
+        ward = Ward(conn).get_ward_by_id(ward_id)
+        if not ward:
+            return {
+                "message": "ward not found",
+                "data": None,
+                "error": "Not Found"
+            }, 404
+        return jsonify({
+            "message": "Successfully retrieved a ward",
+            "data": ward
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/wards", methods=["POST"])
+@cross_origin()
+@jwt_required()
+def create_ward():
+    try:
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        ward = Ward(conn).create_ward(data["name"], data["id_district"])
+        return jsonify({
+            "message": "Successfully created a ward",
+            "data": ward
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "Failed to create a ward",
+            "error": str(e),
+            "data": None
+        }), 500
+
+
+@app.route("/wards/<ward_id>", methods=["PUT"])
+@cross_origin()
+@jwt_required()
+def update_ward(ward_id):
+    try:
+        ward = Ward(conn).get_ward_by_id(ward_id)
+        if not ward:
+            return {
+                "message": "ward not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        data = request.json
+        if not data:
+            return {
+                "message": "Invalid data",
+                "data": None,
+                "error": "Bad request"
+            }, 400
+        # Validate input
+        # is_validated = validate_email_and_password(
+        #     data.get('email'), data.get('password'))
+        # if is_validated is not True:
+        #     return {
+        #         "message": "Invalid data",
+        #         "data": None,
+        #         "error": is_validated}, 400
+        ward = ward(conn).update_ward(
+            ward_id, data["name"], data["id_district"])
+        return jsonify({
+            "message": "Successfully updated a ward",
+            "data": ward
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "failed to update a ward",
+            "error": str(e),
+            "data": None
+        }), 400
+
+
+@app.route("/wards/<ward_id>", methods=["DELETE"])
+@cross_origin()
+@jwt_required()
+def delete_ward(ward_id):
+    try:
+        ward = Ward(conn).get_ward_by_id(ward_id)
+        if not ward:
+            return {
+                "message": "Bus station not found",
+                "data": None,
+                "error": "Not found"
+            }, 404
+        ward = Ward(conn).delete_ward(ward_id)
         return jsonify({
             "message": "Successfully deleted a bus station",
             "data": None
