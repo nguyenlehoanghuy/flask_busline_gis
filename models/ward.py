@@ -51,7 +51,7 @@ class Ward:
                 'id_district': ward[2]
             }
         except psycopg2.Error as e:
-            print(f"Error searching bus station by name {name}: {e}")
+            print(f"Error searching ward by name {name}: {e}")
             return None
 
     def create_ward(self, name, id_district):
@@ -66,7 +66,7 @@ class Ward:
                 self.conn.commit()
             return {'id': new_ward_id}
         except psycopg2.Error as e:
-            print(f"Error creating bus station: {e}")
+            print(f"Error creating ward: {e}")
             return None
 
     def update_ward(self, ward_id, name, id_district):

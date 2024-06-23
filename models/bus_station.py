@@ -19,7 +19,7 @@ class BusStation:
                 'id_ward': bus_station[5]
             } for bus_station in bus_stations]
         except psycopg2.Error as e:
-            print(f"Error fetching all users: {e}")
+            print(f"Error fetching all bus stations: {e}")
             return None
 
     def get_bus_station_by_id(self, bus_station_id):
@@ -32,7 +32,7 @@ class BusStation:
                     return None
             return {'id': bus_station[0], 'name': bus_station[1], 'long': bus_station[2], 'lat': bus_station[3], 'address': bus_station[4], 'id_ward': bus_station[5]}
         except psycopg2.Error as e:
-            print(f"Error fetching user with id {bus_station_id}: {e}")
+            print(f"Error fetching bus station with id {bus_station_id}: {e}")
             return None
 
     def get_bus_station_by_name(self, name):
@@ -72,7 +72,7 @@ class BusStation:
                 self.conn.commit()
                 return True
         except psycopg2.Error as e:
-            print(f"Error updating user with id {bus_station_id}: {e}")
+            print(f"Error updating bus station with id {bus_station_id}: {e}")
             return False
 
     def delete_bus_station(self, bus_station_id):
@@ -83,5 +83,5 @@ class BusStation:
                 self.conn.commit()
                 return True
         except psycopg2.Error as e:
-            print(f"Error deleting user with id {bus_station_id}: {e}")
+            print(f"Error deleting bus station with id {bus_station_id}: {e}")
             return False

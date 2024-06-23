@@ -10,7 +10,6 @@ class District:
             with self.conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM districts;")
                 districts = cursor.fetchall()
-                print(districts)
             return [{
                 'id': district[0],
                 'name': district[1]
@@ -48,7 +47,7 @@ class District:
                 'name': district[1]
             }
         except psycopg2.Error as e:
-            print(f"Error searching bus station by name {name}: {e}")
+            print(f"Error searching district by name {name}: {e}")
             return None
 
     def create_district(self, name):
@@ -63,7 +62,7 @@ class District:
                 self.conn.commit()
             return {'id': new_district_id}
         except psycopg2.Error as e:
-            print(f"Error creating bus station: {e}")
+            print(f"Error creating district: {e}")
             return None
 
     def update_district(self, district_id, name):

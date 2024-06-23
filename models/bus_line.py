@@ -10,7 +10,6 @@ class BusLine:
             with self.conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM bus_lines;")
                 bus_lines = cursor.fetchall()
-                print(bus_lines)
             return [{
                 'id': bus_line[0],
                 'name': bus_line[1],
@@ -21,7 +20,7 @@ class BusLine:
                 'start_time_first': bus_line[6]
             } for bus_line in bus_lines]
         except psycopg2.Error as e:
-            print(f"Error fetching all users: {e}")
+            print(f"Error fetching all bus lines: {e}")
             return None
 
     def get_bus_line_by_id(self, bus_line_id):
@@ -42,7 +41,7 @@ class BusLine:
                 'start_time_first': bus_line[6]
             }
         except psycopg2.Error as e:
-            print(f"Error fetching user with id {bus_line_id}: {e}")
+            print(f"Error fetching bus line with id {bus_line_id}: {e}")
             return None
 
     def get_bus_line_by_name(self, name):
@@ -90,7 +89,7 @@ class BusLine:
                 self.conn.commit()
                 return True
         except psycopg2.Error as e:
-            print(f"Error updating user with id {bus_line_id}: {e}")
+            print(f"Error updating bus line with id {bus_line_id}: {e}")
             return False
 
     def delete_bus_line(self, bus_line_id):
@@ -101,5 +100,5 @@ class BusLine:
                 self.conn.commit()
                 return True
         except psycopg2.Error as e:
-            print(f"Error deleting user with id {bus_line_id}: {e}")
+            print(f"Error deleting bus line with id {bus_line_id}: {e}")
             return False
