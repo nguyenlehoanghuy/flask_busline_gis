@@ -50,14 +50,14 @@ class District:
             print(f"Error searching district by name {name}: {e}")
             return None
 
-    def create_district(self, name):
+    def create_district(self, district_id, name):
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute("""
-                    INSERT INTO districts (name)
-                    VALUES (%s)
+                    INSERT INTO districts (id, name)
+                    VALUES (%s, %s)
                     RETURNING id;
-                """, (name,))
+                """, (district_id, name))
                 new_district_id = cursor.fetchone()[0]
                 self.conn.commit()
             return {'id': new_district_id}
@@ -70,7 +70,7 @@ class District:
             with self.conn.cursor() as cursor:
                 cursor.execute("""
                     UPDATE districts SET name = %s WHERE id = %s;
-                """, (name,  district_id))
+                """, (name, district_id))
                 self.conn.commit()
                 return True
         except psycopg2.Error as e:

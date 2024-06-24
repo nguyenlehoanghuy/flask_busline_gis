@@ -499,7 +499,7 @@ def create_district():
         #         "message": "Invalid data",
         #         "data": None,
         #         "error": is_validated}, 400
-        district = District(conn).create_district(data["name"])
+        district = District(conn).create_district(data["id"], data["name"])
         return jsonify({
             "message": "Successfully created a district",
             "data": district
@@ -600,7 +600,9 @@ def get_all_wards():
 @cross_origin()
 def get_ward_by_id(ward_id):
     try:
-        ward = Ward(conn).get_ward_by_id(ward_id)
+        id_district = ward_id[:2]
+        id_ward = ward_id[-3:]
+        ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
                 "message": "ward not found",
@@ -639,7 +641,8 @@ def create_ward():
         #         "message": "Invalid data",
         #         "data": None,
         #         "error": is_validated}, 400
-        ward = Ward(conn).create_ward(data["name"], data["id_district"])
+        ward = Ward(conn).create_ward(
+            data["id_ward"], data["id_district"], data["name"])
         return jsonify({
             "message": "Successfully created a ward",
             "data": ward
@@ -657,7 +660,9 @@ def create_ward():
 @jwt_required()
 def update_ward(ward_id):
     try:
-        ward = Ward(conn).get_ward_by_id(ward_id)
+        id_district = ward_id[:2]
+        id_ward = ward_id[-3:]
+        ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
                 "message": "ward not found",
@@ -698,7 +703,9 @@ def update_ward(ward_id):
 @jwt_required()
 def delete_ward(ward_id):
     try:
-        ward = Ward(conn).get_ward_by_id(ward_id)
+        id_district = ward_id[:2]
+        id_ward = ward_id[-3:]
+        ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
                 "message": "Bus station not found",
