@@ -1,3 +1,5 @@
+import heapq
+import networkx as nx
 import psycopg2
 
 
@@ -5,11 +7,42 @@ class StationLine:
     def __init__(self, conn):
         self.conn = conn
 
-    def get_all_bus_stations_by_id_bus_line(self, id_bus_line):
+    def find_bus_lines_between_stations(self, start, end):
+        """Find bus lines between start station and end station
+
+        Args:
+            start (int): start station id
+            end (int): end station id
+
+        Returns:
+            array: id  array of bus lines
+        """
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM station_line WHERE id_bus_line = %s;", (id_bus_line,))
+                    "SELECT DISTINCT id_bus_line FROM station_line WHERE id_bus_station = %s OR id_bus_station = %s;", (start, end))
+                station_lines = cursor.fetchall()
+            return [{
+                'id_bus_line': station_line[0],
+            } for station_line in station_lines]
+        except psycopg2.Error as e:
+            print(
+                f"Error fetching all station_line: {e}")
+            return None
+
+    def get_all_bus_stations_by_id_bus_line(self, id_bus_line):
+        """Get all bus stations by bus line id, order by seq
+
+        Args:
+            id_bus_line (int): bus line id
+
+        Returns:
+            array: array of station lines
+        """
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM station_line WHERE id_bus_line = %s ORDER BY seq ASC;", (id_bus_line,))
                 station_lines = cursor.fetchall()
             return [{
                 'id_bus_station': station_line[0],
@@ -80,3 +113,63 @@ class StationLine:
             print(
                 f"Error deleting station_line with id {id_bus_station, id_bus_line}: {e}")
             return False
+
+    def init_graph(self, start, end):
+        """Initialize graph of start, end station id
+
+        Args:
+            start (int): start station id
+            end (int): end station id
+
+        Returns:
+            DiGraph: DiGraph of routing between start station and end station
+        """
+        G = nx.DiGraph()
+        bus_lines = self.find_bus_lines_between_stations(start, end)
+        for bus_line in bus_lines:
+            stations = self.get_all_bus_stations_by_id_bus_line(
+                bus_line['id_bus_line'])
+            for station in stations:
+                G.add_node(station['id_bus_station'])
+            for i in range(len(stations) - 1):
+                G.add_edge(stations[i]['id_bus_station'], stations[i + 1]
+                           ['id_bus_station'], weight=stations[i]['distance'])
+        return G
+
+    def shortest_path(self, start, end):
+        graph = self.init_graph(start, end)
+        print(graph.edges)
+        dist = {start: 0}
+        previous = {}
+        visited = set()
+        heap = [(0, start)]
+
+        while heap:
+            (d, v) = heapq.heappop(heap)
+            print(f"heap: {v}\n")
+            if v in visited:
+                continue
+            visited.add(v)
+
+            for neighbor, edge_attr in graph[v].items():
+                weight = edge_attr['weight']
+                print(f"weight: {weight}\n")
+                distance = dist[v] + weight
+                print(f"distance: {distance}\n")
+
+                if neighbor not in dist or distance < dist[neighbor]:
+                    dist[neighbor] = distance
+                    previous[neighbor] = v
+                    heapq.heappush(heap, (distance, neighbor))
+        if end not in dist:
+            print(f"No path found from {start} to {end}.")
+            return None, float('inf')
+        # Reconstruct path from start to end
+        path = []
+        current = end
+        while current in previous:
+            path.insert(0, current)
+            current = previous[current]
+        path.insert(0, start)
+
+        return {"routing": path, "distance": dist[end]}
