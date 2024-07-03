@@ -10,7 +10,6 @@ class Ward:
             with self.conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM wards;")
                 wards = cursor.fetchall()
-                print(wards)
             return [{
                 'id_ward': ward[0],
                 'id_district': ward[1],

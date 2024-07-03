@@ -600,8 +600,8 @@ def get_all_wards():
 @cross_origin()
 def get_ward_by_id(ward_id):
     try:
-        id_district = ward_id[:2]
-        id_ward = ward_id[-3:]
+        id_district = ward_id[:4]
+        id_ward = ward_id[-2:]
         ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
@@ -660,8 +660,8 @@ def create_ward():
 @jwt_required()
 def update_ward(ward_id):
     try:
-        id_district = ward_id[:2]
-        id_ward = ward_id[-3:]
+        id_district = ward_id[:4]
+        id_ward = ward_id[-2:]
         ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
@@ -703,8 +703,8 @@ def update_ward(ward_id):
 @jwt_required()
 def delete_ward(ward_id):
     try:
-        id_district = ward_id[:2]
-        id_ward = ward_id[-3:]
+        id_district = ward_id[:4]
+        id_ward = ward_id[-2:]
         ward = Ward(conn).get_ward_by_id(id_ward, id_district)
         if not ward:
             return {
