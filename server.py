@@ -763,6 +763,24 @@ def get_all_bus_stations_by_id_bus_line(bus_line_id):
         }, 500
 
 
+@app.route("/bus_lines/<bus_line_id>/schedules", methods=["GET"])
+@cross_origin()
+def get_all_schedules_by_id_bus_line(bus_line_id):
+    try:
+        station_lines = StationLine(
+            conn).get_all_schedules_by_id_bus_line(bus_line_id)
+        return jsonify({
+            "message": "Successfully retrieved all schedules",
+            "data": station_lines
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
 @app.route("/bus_lines/<bus_line_id>/bus_stations/<bus_station_id>", methods=["POST"])
 @cross_origin()
 @jwt_required()
@@ -891,6 +909,48 @@ def delete_station_line(bus_station_id, bus_line_id):
             "error": str(e),
             "data": None
         }), 400
+
+# Routing
+
+
+@app.route("/routes/shortest", methods=["GET"])
+@cross_origin()
+def get_shortest_path():
+    try:
+        start = int(request.args.get('start'))
+        end = int(request.args.get('end'))
+        shortest_path = StationLine(
+            conn).shortest_path(start, end)
+        return jsonify({
+            "message": "Successfully retrieved shortest path",
+            "data": shortest_path
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
+
+
+@app.route("/routes", methods=["GET"])
+@cross_origin()
+def get_find_all_paths():
+    try:
+        start = int(request.args.get('start'))
+        end = int(request.args.get('end'))
+        station_lines = StationLine(
+            conn).find_all_paths(start, end)
+        return jsonify({
+            "message": "Successfully retrieved all paths",
+            "data": station_lines
+        }), 200
+    except Exception as e:
+        return {
+            "message": "Something went wrong",
+            "error": str(e),
+            "data": None
+        }, 500
 
 
 @app.errorhandler(403)

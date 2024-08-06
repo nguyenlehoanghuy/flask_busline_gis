@@ -42,14 +42,43 @@ class StationLine:
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM station_line WHERE id_bus_line = %s ORDER BY seq ASC;", (id_bus_line,))
+                    "SELECT * FROM bus_stations WHERE id in (SELECT id_bus_station FROM station_line WHERE id_bus_line = %s);", (id_bus_line,))
+                bus_stations = cursor.fetchall()
+            return [{
+                'id': bus_stations[0],
+                'name': bus_stations[1],
+                'long': bus_stations[2],
+                'lat': bus_stations[3],
+                'address': bus_stations[4],
+                'id_ward': bus_stations[5]
+            } for bus_stations in bus_stations]
+        except psycopg2.Error as e:
+            print(
+                f"Error fetching station_line with bus line id {id_bus_line}: {e}")
+            return None
+
+    def get_all_schedules_by_id_bus_line(self, id_bus_line):
+        """Get all bus stations by bus line id, order by seq
+
+        Args:
+            id_bus_line (int): bus line id
+
+        Returns:
+            array: array of station lines
+        """
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT stl.id_bus_station, stl.id_bus_line, stl.seq, stl.start_time_first, stl.distance, bst.lat, bst.long FROM station_line stl, bus_stations bst WHERE stl.id_bus_station = bst.id AND stl.id_bus_line = %s ORDER BY stl.seq ASC;", (id_bus_line,))
                 station_lines = cursor.fetchall()
             return [{
                 'id_bus_station': station_line[0],
                 'id_bus_line': station_line[1],
                 'seq': station_line[2],
                 'start_time_first': station_line[3],
-                'distance': station_line[4]
+                'distance': station_line[4],
+                'lat': station_line[5],
+                'long': station_line[6]
             } for station_line in station_lines]
         except psycopg2.Error as e:
             print(
@@ -127,10 +156,11 @@ class StationLine:
         G = nx.DiGraph()
         bus_lines = self.find_bus_lines_between_stations(start, end)
         for bus_line in bus_lines:
-            stations = self.get_all_bus_stations_by_id_bus_line(
+            stations = self.get_all_schedules_by_id_bus_line(
                 bus_line['id_bus_line'])
             for station in stations:
-                G.add_node(station['id_bus_station'])
+                G.add_node(station['id_bus_station'],
+                           lat=station['lat'], lng=station['long'])
             for i in range(len(stations) - 1):
                 G.add_edge(stations[i]['id_bus_station'], stations[i + 1]
                            ['id_bus_station'], weight=stations[i]['distance'])
@@ -138,7 +168,6 @@ class StationLine:
 
     def shortest_path(self, start, end):
         graph = self.init_graph(start, end)
-        print(graph.edges)
         dist = {start: 0}
         previous = {}
         visited = set()
@@ -146,7 +175,6 @@ class StationLine:
 
         while heap:
             (d, v) = heapq.heappop(heap)
-            print(f"heap: {v}\n")
             if v in visited:
                 continue
             visited.add(v)
@@ -171,5 +199,47 @@ class StationLine:
             path.insert(0, current)
             current = previous[current]
         path.insert(0, start)
-
         return {"routing": path, "distance": dist[end]}
+
+    def find_all_paths(self, start, end):
+        """Find all paths from start to end in the directed graph and calculate the total weight of each path.
+
+        Args:
+            start (int): The starting node id.
+            end (int): The target node id.
+
+        Returns:
+            List[dict]: List of paths, each path is a dictionary containing 'nodes' (list of node info) and 'total_weight'.
+        """
+        # Initialize the graph
+        G = self.init_graph(start, end)
+
+        def dfs(current_node, path, weight_total):
+            if current_node == end:
+                # Append the path with total weight to all_paths
+                all_paths.append({
+                    'nodes': path.copy(),
+                    'total_weight': weight_total
+                })
+                return
+            for neighbor in G.neighbors(current_node):
+                if neighbor not in [node['id_bus_station'] for node in path]:
+                    edge_weight = G.get_edge_data(
+                        current_node, neighbor, default={'weight': 0})['weight']
+                    path.append({
+                        'id_bus_station': neighbor,
+                        'lat': G.nodes[neighbor]['lat'],
+                        'lng': G.nodes[neighbor]['lng']
+                    })
+                    dfs(neighbor, path, weight_total + edge_weight)
+                    path.pop()
+
+        all_paths = []
+        # Start DFS from the start node
+        dfs(start, [{
+            'id_bus_station': start,
+            'lat': G.nodes[start]['lat'],
+            'lng': G.nodes[start]['lng']
+        }], 0)
+
+        return all_paths
