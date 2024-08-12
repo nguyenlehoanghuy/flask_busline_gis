@@ -69,7 +69,7 @@ class StationLine:
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT stl.id_bus_station, stl.id_bus_line, stl.seq, stl.start_time_first, stl.distance, bst.lat, bst.long FROM station_line stl, bus_stations bst WHERE stl.id_bus_station = bst.id AND stl.id_bus_line = %s ORDER BY stl.seq ASC;", (id_bus_line,))
+                    "SELECT stl.id_bus_station, stl.id_bus_line, stl.seq, stl.start_time_first, stl.distance, bst.lat, bst.long, bst.name FROM station_line stl, bus_stations bst WHERE stl.id_bus_station = bst.id AND stl.id_bus_line = %s ORDER BY stl.seq ASC;", (id_bus_line,))
                 station_lines = cursor.fetchall()
             return [{
                 'id_bus_station': station_line[0],
@@ -78,7 +78,8 @@ class StationLine:
                 'start_time_first': station_line[3],
                 'distance': station_line[4],
                 'lat': station_line[5],
-                'long': station_line[6]
+                'long': station_line[6],
+                'name': station_line[7]
             } for station_line in station_lines]
         except psycopg2.Error as e:
             print(
@@ -160,7 +161,7 @@ class StationLine:
                 bus_line['id_bus_line'])
             for station in stations:
                 G.add_node(station['id_bus_station'],
-                           lat=station['lat'], lng=station['long'])
+                           lat=station['lat'], lng=station['long'], name=station['name'])
             for i in range(len(stations) - 1):
                 G.add_edge(stations[i]['id_bus_station'], stations[i + 1]
                            ['id_bus_station'], weight=stations[i]['distance'])
@@ -229,7 +230,8 @@ class StationLine:
                     path.append({
                         'id_bus_station': neighbor,
                         'lat': G.nodes[neighbor]['lat'],
-                        'lng': G.nodes[neighbor]['lng']
+                        'lng': G.nodes[neighbor]['lng'],
+                        'name': G.nodes[neighbor]['name']
                     })
                     dfs(neighbor, path, weight_total + edge_weight)
                     path.pop()
@@ -239,7 +241,8 @@ class StationLine:
         dfs(start, [{
             'id_bus_station': start,
             'lat': G.nodes[start]['lat'],
-            'lng': G.nodes[start]['lng']
+            'lng': G.nodes[start]['lng'],
+            'name': G.nodes[start]['name']
         }], 0)
 
         return all_paths
