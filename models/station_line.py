@@ -104,6 +104,23 @@ class StationLine:
                 f"Error fetching station_line with bus station id {id_bus_station}: {e}")
             return None
 
+    def get_station_line_by_id(self, id_bus_station, id_bus_line):
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM station_line WHERE id_bus_station = %s AND id_bus_line = %s;", (id_bus_station, id_bus_line))
+                station_line = cursor.fetchone()
+            return {
+                'id_bus_station': station_line[0],
+                'id_bus_line': station_line[1],
+                'seq': station_line[2],
+                'start_time_first': station_line[3],
+                'distance': station_line[4]
+            }
+        except psycopg2.Error as e:
+            print(f"Error creating bus station: {e}")
+            return None
+
     def create_station_line(self, id_bus_station, id_bus_line, seq, start_time_first, distance):
         try:
             with self.conn.cursor() as cursor:

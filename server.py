@@ -781,6 +781,24 @@ def get_all_schedules_by_id_bus_line(bus_line_id):
         }, 500
 
 
+@app.route("/bus_lines/<bus_line_id>/bus_stations/<bus_station_id>", methods=["GET"])
+@cross_origin()
+def get_station_line_by_id(bus_station_id, bus_line_id):
+    try:
+        station_line = StationLine(conn).get_station_line_by_id(
+            bus_station_id, bus_line_id)
+        return jsonify({
+            "message": "Successfully created a station line",
+            "data": station_line
+        }), 201
+    except Exception as e:
+        return jsonify({
+            "message": "Failed to create a station line",
+            "error": str(e),
+            "data": None
+        }), 500
+
+
 @app.route("/bus_lines/<bus_line_id>/bus_stations/<bus_station_id>", methods=["POST"])
 @cross_origin()
 @jwt_required()
