@@ -7,27 +7,16 @@ class StationLine:
     def __init__(self, conn):
         self.conn = conn
 
-    def find_bus_lines_between_stations(self, start, end):
-        """Find bus lines between start station and end station
-
-        Args:
-            start (int): start station id
-            end (int): end station id
-
-        Returns:
-            array: id  array of bus lines
-        """
+    def get_all_id_bus_lines(self):
         try:
             with self.conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT DISTINCT id_bus_line FROM station_line WHERE id_bus_station = %s OR id_bus_station = %s;", (start, end))
-                station_lines = cursor.fetchall()
+                cursor.execute("SELECT * FROM bus_lines;")
+                bus_lines = cursor.fetchall()
             return [{
-                'id_bus_line': station_line[0],
-            } for station_line in station_lines]
+                'id_bus_line': bus_line[0]
+            } for bus_line in bus_lines]
         except psycopg2.Error as e:
-            print(
-                f"Error fetching all station_line: {e}")
+            print(f"Error fetching all bus lines: {e}")
             return None
 
     def get_all_bus_stations_by_id_bus_line(self, id_bus_line):
@@ -172,7 +161,7 @@ class StationLine:
             DiGraph: DiGraph of routing between start station and end station
         """
         G = nx.DiGraph()
-        bus_lines = self.find_bus_lines_between_stations(start, end)
+        bus_lines = self.get_all_id_bus_lines()
         for bus_line in bus_lines:
             stations = self.get_all_schedules_by_id_bus_line(
                 bus_line['id_bus_line'])
