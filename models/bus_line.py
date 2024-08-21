@@ -8,7 +8,7 @@ class BusLine:
     def get_all_bus_lines(self):
         try:
             with self.conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM bus_lines;")
+                cursor.execute("SELECT * FROM bus_lines ORDER BY id;")
                 bus_lines = cursor.fetchall()
             return [{
                 'id': bus_line[0],

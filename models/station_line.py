@@ -31,7 +31,7 @@ class StationLine:
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
-                    "SELECT * FROM bus_stations WHERE id in (SELECT id_bus_station FROM station_line WHERE id_bus_line = %s);", (id_bus_line,))
+                    "SELECT * FROM bus_stations AS bs JOIN (SELECT id_bus_station, seq FROM station_line WHERE id_bus_line = %s) AS bid ON bs.id = bid.id_bus_station ORDER BY seq;", (id_bus_line,))
                 bus_stations = cursor.fetchall()
             return [{
                 'id': bus_stations[0],
